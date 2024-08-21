@@ -169,7 +169,7 @@ def generate_diffusion_cond(
     if conditioning_tensors is None:
         conditioning_tensors_list = [model.conditioner(cond, device) for cond in conditioning_list]
         print('conditioning_tensors_list', conditioning_tensors_list)
-        conditioning_tensors = apply_conditioning(tensors_list, weights)
+        conditioning_tensors = apply_conditioning(conditioning_tensors_list, weights_list)
         print('conditioning_tensors', conditioning_tensors)
 
         # # Get the cross_attn_cond tensors from all conditionings and compute the weighted mean
