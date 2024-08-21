@@ -86,18 +86,40 @@ def generate_diffusion_uncond(
     # Return audio
     return sampled
 
-def get_morphed_embedding(weights, audio_embed):
+# def get_morphed_embedding(weights, audio_embed):
 
-    weights = torch.tensor(weights, dtype=torch.float32)
-    weights = weights.to('cuda')
-    weights = weights / weights.sum()
+#     weights = torch.tensor(weights, dtype=torch.float32)
+#     weights = weights.to('cuda')
+#     weights = weights / weights.sum()
 
-    weights = weights.view(-1, 1)
-    audio_embed_tensor = torch.stack(audio_embed, dim=0).squeeze()  # Shape: [n, 512]
-    audio_embed_tensor = audio_embed_tensor.to('cuda')
-    morphed_embedding = torch.sum(weights * audio_embed_tensor, dim=0)
+#     weights = weights.view(-1, 1)
+#     audio_embed_tensor = torch.stack(audio_embed, dim=0).squeeze()  # Shape: [n, 512]
+#     audio_embed_tensor = audio_embed_tensor.to('cuda')
+#     morphed_embedding = torch.sum(weights * audio_embed_tensor, dim=0)
 
-    return morphed_embedding
+#     return morphed_embedding
+
+
+def apply_conditioning(tensors_list, weights):
+    # Extract the prompts and masks
+    prompts = [entry['prompt'][0] for entry in tensors_list]
+    masks = [entry['prompt'][1] for entry in tensors_list]
+
+    # Compute the weighted mean of the prompts
+    weighted_prompt = torch.stack(prompts).mul(weights[:, None, None, None]).sum(dim=0)
+
+    # Apply the mask from the first element
+    mask = masks[0]
+    weighted_prompt = weighted_prompt * mask
+
+    # Retrieve everything else from the first element
+    conditioned_tensors = {
+        'prompt': (weighted_prompt, mask),
+        'seconds_start': tensors_list[0]['seconds_start'],
+        'seconds_total': tensors_list[0]['seconds_total']
+    }
+
+    return conditioned_tensors
 
 def generate_diffusion_cond(
         model,
@@ -147,14 +169,16 @@ def generate_diffusion_cond(
     if conditioning_tensors is None:
         conditioning_tensors_list = [model.conditioner(cond, device) for cond in conditioning_list]
         print('conditioning_tensors_list', conditioning_tensors_list)
+        conditioning_tensors = apply_conditioning(tensors_list, weights)
+        print('conditioning_tensors', conditioning_tensors)
 
-        # Get the cross_attn_cond tensors from all conditionings and compute the weighted mean
-        cross_attn_conds = [model.get_conditioning_inputs(cond_tensors)['cross_attn_cond'] for cond_tensors in conditioning_tensors_list]
-        weighted_cross_attn_cond = get_morphed_embedding(weights_list, cross_attn_conds)
+        # # Get the cross_attn_cond tensors from all conditionings and compute the weighted mean
+        # cross_attn_conds = [model.get_conditioning_inputs(cond_tensors)['cross_attn_cond'] for cond_tensors in conditioning_tensors_list]
+        # weighted_cross_attn_cond = get_morphed_embedding(weights_list, cross_attn_conds)
 
-        # Use the weighted mean as the new cross_attn_cond
-        conditioning_tensors = model.get_conditioning_inputs(conditioning_tensors_list[0])  # Use one of the conditioning inputs as a template
-        conditioning_tensors['cross_attn_cond'] = weighted_cross_attn_cond
+        # # Use the weighted mean as the new cross_attn_cond
+        # conditioning_tensors = model.get_conditioning_inputs(conditioning_tensors_list[0])  # Use one of the conditioning inputs as a template
+        # conditioning_tensors['cross_attn_cond'] = weighted_cross_attn_cond
 
     conditioning_inputs = model.get_conditioning_inputs(conditioning_tensors)
 
