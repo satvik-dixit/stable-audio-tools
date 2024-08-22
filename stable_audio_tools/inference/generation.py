@@ -100,8 +100,6 @@ def generate_diffusion_uncond(
 #     return morphed_embedding
 
 
-import torch
-
 def apply_conditioning(tensors_list, weights_list):
     # Extract the prompts and masks
     prompts = [entry['prompt'][0] for entry in tensors_list]
@@ -117,7 +115,7 @@ def apply_conditioning(tensors_list, weights_list):
 
     # Apply the mask from the first element
     mask = masks[0]
-    weighted_prompt = weighted_prompt * mask
+    # weighted_prompt = weighted_prompt * mask
 
     # Retrieve everything else from the first element
     conditioned_tensors = {
@@ -127,7 +125,6 @@ def apply_conditioning(tensors_list, weights_list):
     }
 
     return conditioned_tensors
-
 
 def generate_diffusion_cond(
         model,
