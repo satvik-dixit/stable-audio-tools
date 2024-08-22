@@ -146,7 +146,7 @@ def generate_diffusion_cond(
         return_latents=False,
         **sampler_kwargs
         ) -> torch.Tensor:
-    print('condit function called')
+    # print('condit function called')
 
     # The length of the output in audio samples 
     audio_sample_size = sample_size
@@ -157,7 +157,7 @@ def generate_diffusion_cond(
 
     # Seed
     seed = seed if seed != -1 else np.random.randint(0, 2**32 - 1, dtype=np.uint32)
-    print(seed)
+    # print(seed)
     torch.manual_seed(seed)
 
     # Define the initial noise
@@ -173,9 +173,9 @@ def generate_diffusion_cond(
     
     if conditioning_tensors is None:
         conditioning_tensors_list = [model.conditioner(cond, device) for cond in conditioning_list]
-        print('conditioning_tensors_list', conditioning_tensors_list)
+        # print('conditioning_tensors_list', conditioning_tensors_list)
         conditioning_tensors = apply_conditioning(conditioning_tensors_list, weights_list)
-        print('conditioning_tensors', conditioning_tensors)
+        # print('conditioning_tensors', conditioning_tensors)
 
         # # Get the cross_attn_cond tensors from all conditionings and compute the weighted mean
         # cross_attn_conds = [model.get_conditioning_inputs(cond_tensors)['cross_attn_cond'] for cond_tensors in conditioning_tensors_list]
@@ -236,7 +236,7 @@ def generate_diffusion_cond(
     model_dtype = next(model.model.parameters()).dtype
     noise = noise.type(model_dtype)
     conditioning_inputs = {k: v.type(model_dtype) if v is not None else v for k, v in conditioning_inputs.items()}
-    print('conditioning_inputs', conditioning_inputs)
+    # print('conditioning_inputs', conditioning_inputs)
 
     diff_objective = model.diffusion_objective
 
